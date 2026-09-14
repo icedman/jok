@@ -459,7 +459,7 @@ pub fn JokContext(comptime cfg: config.Config) type {
                 drawFn(self._ctx) catch |err| {
                     log.err("Got error in `draw`: {s}", .{@errorName(err)});
                     if (@errorReturnTrace()) |trace| {
-                        std.debug.dumpStackTrace(trace.*);
+                        std.debug.dumpErrorReturnTrace(trace);
                         kill(self);
                         return;
                     }
@@ -508,7 +508,7 @@ pub fn JokContext(comptime cfg: config.Config) type {
                     eventFn(self._ctx, we) catch |err| {
                         log.err("Got error in `event`: {s}", .{@errorName(err)});
                         if (@errorReturnTrace()) |trace| {
-                            std.debug.dumpStackTrace(trace.*);
+                            std.debug.dumpErrorReturnTrace(trace);
                             kill(self);
                             return;
                         }
@@ -519,7 +519,7 @@ pub fn JokContext(comptime cfg: config.Config) type {
             updateFn(self._ctx) catch |err| {
                 log.err("Got error in `update`: {s}", .{@errorName(err)});
                 if (@errorReturnTrace()) |trace| {
-                    std.debug.dumpStackTrace(trace.*);
+                    std.debug.dumpErrorReturnTrace(trace);
                     kill(self);
                     return;
                 }
@@ -557,9 +557,10 @@ pub fn JokContext(comptime cfg: config.Config) type {
             const info = try self._renderer.getInfo();
 
             // Print system info
-            const writer = std.debug.lockStderrWriter(&.{});
-            defer std.debug.unlockStdErr();
-            try writer.print(
+            const stderr = std.debug.lockStderr(&.{});
+            defer std.debug.unlockStderr();
+            const writer = stderr.file_writer;
+            try writer.interface.print(
                 \\System info:
                 \\    Build Mode  : {s}
                 \\    Log Level   : {s}
@@ -876,7 +877,7 @@ pub fn JokContext(comptime cfg: config.Config) type {
                 imgui.text("V-Sync Enabled: {}", .{rdinfo.vsync > 0});
                 imgui.text("Optimize Mode: {s}", .{@tagName(builtin.mode)});
                 imgui.separator();
-                imgui.text("Duration: {D}", .{@as(u64, @intFromFloat(self._seconds_real * 1e9))});
+                imgui.text("Duration: {d}ns", .{@as(u64, @intFromFloat(self._seconds_real * 1e9))});
                 if (self._running_slow) {
                     imgui.textColored(.{ 1, 0, 0, 1 }, "FPS: {d:.1} {s}", .{ self._fps, cfg.jok_fps_limit.str() });
                     imgui.textColored(.{ 1, 0, 0, 1 }, "CPU: {d:.1}ms", .{1000.0 / self._fps});

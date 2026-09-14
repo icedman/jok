@@ -68,7 +68,7 @@ pub fn init(allocator: std.mem.Allocator) void {
         }
     }
 
-    if (PHYSFS_init(std.os.argv[0]) == 0) {
+    if (PHYSFS_init(null) == 0) {
         @panic(getLastErrorCode().toDesc());
     }
 }
@@ -530,7 +530,18 @@ pub const File = struct {
 var physfs_allocator: MemAllocator = undefined;
 var mem_allocator: ?std.mem.Allocator = null;
 var mem_allocations: std.AutoHashMap(usize, usize) = undefined;
-var mem_mutex: std.Thread.Mutex = .{};
+const Mutex = struct {
+    state: std.atomic.Value(u32) = .init(0),
+    pub fn lock(m: *@This()) void {
+        while (m.state.swap(1, .acquire) != 0) {
+            std.Thread.yield() catch {};
+        }
+    }
+    pub fn unlock(m: *@This()) void {
+        m.state.store(0, .release);
+    }
+};
+var mem_mutex: Mutex = .{};
 const mem_alignment: std.mem.Alignment = .@"16";
 
 fn memInit() callconv(.c) c_int {

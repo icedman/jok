@@ -39,7 +39,7 @@ pub fn main() !void {
     game.init(jok_ctx.context()) catch |err| {
         log.err("Init game failed: {}", .{err});
         if (@errorReturnTrace()) |trace| {
-            std.debug.dumpStackTrace(trace.*);
+            std.debug.dumpErrorReturnTrace(trace);
             return;
         }
     };

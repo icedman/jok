@@ -364,7 +364,10 @@ pub const Renderer = struct {
                 flip,
             );
         } else {
-            const filedata = try std.fs.cwd().readFileAlloc(
+            var threaded: std.Io.Threaded = .init(allocator, .{});
+            defer threaded.deinit();
+            const filedata = try std.Io.Dir.cwd().readFileAlloc(
+                threaded.io(),
                 std.mem.sliceTo(image_file, 0),
                 allocator,
                 .limited(1 << 30),

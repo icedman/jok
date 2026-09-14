@@ -35,8 +35,8 @@ pub fn build(b: *Build) void {
         .name = "all",
         .root_module = root,
     });
-    tests.linkLibC();
-    tests.addIncludePath(b.dependency("sdl", .{}).path("include"));
+    root.link_libc = true;
+    root.addIncludePath(b.dependency("sdl", .{}).path("include"));
     const test_step = b.step("test", "run tests");
     test_step.dependOn(&b.addRunArtifact(tests).step);
 
@@ -223,7 +223,7 @@ pub fn createDesktopApp(
         .name = name,
         .root_module = root,
     });
-    exe.linkLibrary(jok.artifact);
+    root.linkLibrary(jok.artifact);
 
     return exe;
 }
@@ -263,7 +263,7 @@ pub fn createTest(
         .name = name,
         .root_module = root,
     });
-    test_exe.linkLibrary(jok.artifact);
+    root.linkLibrary(jok.artifact);
 
     return test_exe;
 }
@@ -324,7 +324,7 @@ pub fn createWeb(
         .name = name,
         .root_module = root,
     });
-    lib.linkLibrary(jok.artifact);
+    root.linkLibrary(jok.artifact);
 
     // Link using emcc
     const em = Emscripten.init(b, builder.dependency("emsdk", .{}));
@@ -448,7 +448,7 @@ const Emscripten = struct {
     // an .emscripten file yet until the one-time setup.
     fn possibleSetup(sdk: *Sdk, lib: *Build.Step.Compile) void {
         const dot_emsc_path = sdk.path(&.{".emscripten"}).getPath(sdk.builder);
-        const dot_emsc_exists = !std.meta.isError(std.fs.accessAbsolute(dot_emsc_path, .{}));
+        const dot_emsc_exists = !std.meta.isError(std.Io.Dir.accessAbsolute(sdk.builder.graph.io, dot_emsc_path, .{}));
         if (!dot_emsc_exists) {
             const emsdk_install = sdk.createEmsdkStep();
             emsdk_install.addArgs(&.{ "install", "latest" });

@@ -37,7 +37,10 @@ pub fn create(ctx: jok.Context, path: [*:0]const u8) !*Font {
 
         self.font_data = try handle.readAllAlloc(allocator);
     } else {
-        self.font_data = try std.fs.cwd().readFileAlloc(
+        var threaded: std.Io.Threaded = .init(allocator, .{});
+        defer threaded.deinit();
+        self.font_data = try std.Io.Dir.cwd().readFileAlloc(
+            threaded.io(),
             std.mem.sliceTo(path, 0),
             allocator,
             .limited(1 << 30),

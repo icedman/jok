@@ -1414,7 +1414,7 @@ pub const Polyline = struct {
 pub fn BatchPool(comptime pool_size: usize, comptime thread_safe: bool) type {
     const AllocSet = std.StaticBitSet(pool_size);
     const mutex_init = if (thread_safe and !builtin.single_threaded)
-        std.Thread.Mutex{}
+        SpinMutex{}
     else
         DummyMutex{};
 
@@ -1488,6 +1488,18 @@ pub fn BatchPool(comptime pool_size: usize, comptime thread_safe: bool) type {
         }
     };
 }
+
+const SpinMutex = struct {
+    state: std.atomic.Value(u32) = .init(0),
+    pub fn lock(m: *@This()) void {
+        while (m.state.swap(1, .acquire) != 0) {
+            std.Thread.yield() catch {};
+        }
+    }
+    pub fn unlock(m: *@This()) void {
+        m.state.store(0, .release);
+    }
+};
 
 const DummyMutex = struct {
     fn lock(_: *DummyMutex) void {}

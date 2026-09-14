@@ -483,7 +483,10 @@ pub fn fromObj(
             break :BLK try handle.readAllAlloc(ctx.allocator());
         } else {
             const idx = std.mem.indexOfSentinel(u8, 0, obj_file_path);
-            break :BLK try std.fs.cwd().readFileAlloc(
+            var threaded: std.Io.Threaded = .init(ctx.allocator(), .{});
+            defer threaded.deinit();
+            break :BLK try std.Io.Dir.cwd().readFileAlloc(
+                threaded.io(),
                 obj_file_path[0..idx :0],
                 ctx.allocator(),
                 .limited(1 << 30),
@@ -500,7 +503,10 @@ pub fn fromObj(
                 break :BLK try handle.readAllAlloc(ctx.allocator());
             } else {
                 const idx = std.mem.indexOfSentinel(u8, 0, p);
-                break :BLK try std.fs.cwd().readFileAlloc(
+                var threaded: std.Io.Threaded = .init(ctx.allocator(), .{});
+                defer threaded.deinit();
+                break :BLK try std.Io.Dir.cwd().readFileAlloc(
+                    threaded.io(),
                     p[0..idx :0],
                     ctx.allocator(),
                     .limited(1 << 30),

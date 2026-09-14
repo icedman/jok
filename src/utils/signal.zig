@@ -5,24 +5,7 @@ const log = std.log.scoped(.jok);
 
 /// Signal Type
 pub fn Signal(comptime types: []const type) type {
-    var params: [types.len]builtin.Type.Fn.Param = undefined;
-    for (&params, 0..) |*p, i| {
-        p.* = .{
-            .is_generic = false,
-            .is_noalias = false,
-            .type = types[i],
-        };
-    }
-    const funInfo = builtin.Type{
-        .@"fn" = .{
-            .calling_convention = .auto,
-            .is_generic = false,
-            .is_var_args = false,
-            .return_type = void,
-            .params = &params,
-        },
-    };
-    const FunType = @Type(funInfo);
+    const FunType = @Fn(types, &@splat(.{}), void, .{});
     const ArgsType = std.meta.Tuple(types);
 
     return struct {

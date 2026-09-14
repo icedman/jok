@@ -64,7 +64,18 @@ extern fn zguiGetCurrentContext() ?Context;
 //--------------------------------------------------------------------------------------------------
 var mem_allocator: ?std.mem.Allocator = null;
 var mem_allocations: ?std.AutoHashMap(usize, usize) = null;
-var mem_mutex: std.Thread.Mutex = .{};
+const Mutex = struct {
+    state: std.atomic.Value(u32) = .init(0),
+    pub fn lock(m: *@This()) void {
+        while (m.state.swap(1, .acquire) != 0) {
+            std.Thread.yield() catch {};
+        }
+    }
+    pub fn unlock(m: *@This()) void {
+        m.state.store(0, .release);
+    }
+};
+var mem_mutex: Mutex = .{};
 const mem_alignment: std.mem.Alignment = .@"16";
 
 fn zguiMemAlloc(size: usize, _: ?*anyopaque) callconv(.c) ?*anyopaque {
